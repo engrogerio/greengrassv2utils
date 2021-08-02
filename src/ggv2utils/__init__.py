@@ -1,2 +1,1 @@
-
-__all__ = [Ipc, Mqtt]
+__all__ = ["Ipc", "Mqtt"]
