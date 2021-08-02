@@ -155,4 +155,4 @@ class Ipc(MessageQueue):
             print('Exception occurred when using IPC.')
             traceback.print_exc()
 
-__all__ = [Ipc, Mqtt]
+
