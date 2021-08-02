@@ -1,8 +1,8 @@
 #!/usr/bin/env pyhthon3
 from distutils.core import setup
 
-setup(name='greengrassv2utils',
-      version='1.0.1',
+setup(name='ggv2utils',
+      version='1.0.0',
       description='AWS Greengrass v2 Utilities',
       author='Rogerio Silva',
       author_email='rogerio@inventsis.com.br',
