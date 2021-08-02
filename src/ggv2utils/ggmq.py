@@ -17,7 +17,6 @@ from awsiot.greengrasscoreipc.model import (
 from abc import ABC, abstractmethod
 
 
-__all__ = [Ipc, Mqtt]
 
 # https://github.com/aws/aws-iot-device-sdk-python-v2/blob/main/awsiot/greengrasscoreipc/client.py
 
@@ -155,3 +154,5 @@ class Ipc(MessageQueue):
         except Exception as e:
             print('Exception occurred when using IPC.')
             traceback.print_exc()
+
+__all__ = [Ipc, Mqtt]
