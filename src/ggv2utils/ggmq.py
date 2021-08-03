@@ -60,7 +60,7 @@ class Mqtt(MessageQueue):
             future = operation.get_response()
             future.result(self.TIMEOUT)
         except Exception as e:
-            print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
+            print(f'Exception while publishing to Mqtt topic: {topic}. {e}', file=sys.stderr)
 
     def subscribe(self, topic: str, handler):
         pass
@@ -130,13 +130,13 @@ class Ipc(MessageQueue):
             future.result(self.TIMEOUT)
         
         except concurrent.futures.TimeoutError as e:
-            print(f'Timeout occurred while publishing to topic: {topic}', file=sys.stderr)
+            print(f'Timeout occurred while publishing to Ipc topic: {topic}', file=sys.stderr)
 
         except UnauthorizedError as e:
-            print(f'Unauthorized error while publishing to topic: {topic}', file=sys.stderr)
+            print(f'Unauthorized error while publishing to Ipc topic: {topic}', file=sys.stderr)
         
         except Exception as e:
-            print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
+            print(f'Exception while publishing to Ipc topic: {topic}. {e}', file=sys.stderr)
             traceback.print_exc()
 
         return future
@@ -155,17 +155,17 @@ class Ipc(MessageQueue):
                 print(f'Successfully subscribed to topic: {topic}.')
             
             except concurrent.futures.TimeoutError as e:
-                print(f'Timeout occurred while subscribing to topic: {topic}. {e}', file=sys.stderr)
+                print(f'Timeout occurred while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
             
             except UnauthorizedError as e:
-                print(f'Unauthorized error while subscribing to topic: {topic}. {e}', file=sys.stderr)
+                print(f'Unauthorized error while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
 
             except Exception as e:
-                print(f'Exception while subscribing to topic: {topic}. {e}', file=sys.stderr)
+                print(f'Exception while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
             
             except InterruptedError as e:
-                print(f'Subscribe interrupted. {e}', file=sys.stderr)
+                print(f'Subscribe top ipc interrupted. {e}', file=sys.stderr)
         
         except Exception as e:
-            print(f'Exception occurred when using IPC: {e}', file=sys.stderr)
+            print(f'Exception occurred when subscribing ipc topic {topic}: {e}', file=sys.stderr)
             traceback.print_exc()
