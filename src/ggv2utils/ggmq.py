@@ -90,7 +90,7 @@ class Ipc(MessageQueue):
         Returns the response of the operation.
         """
         message_type, message_value = self.extract_message(dic_message)
-        
+        print("@@@", message_type, message_value) 
         try:
             #json_message = message # json.dumps(message)
             publish_message = PublishMessage()
@@ -98,9 +98,11 @@ class Ipc(MessageQueue):
             if message_type == 'json':
                 publish_message.json_message = JsonMessage()
                 publish_message.json_message.message = message_value
+                print('@@json', message_value)
             else: # message_type is binary
                 publish_message.binary_message = BinaryMessage()
                 publish_message.binary_message.message = message_value #bytes(message_value, "utf-8")
+                print('@@binary', message_value)
 
             request = PublishToTopicRequest()
             request.topic = topic
