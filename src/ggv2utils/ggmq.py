@@ -24,11 +24,7 @@ class MessageQueue(ABC):
     """
     A message queue must have a publish and a subscribe method.
     """
-    def __init__(self):
-        self.ipc_client = awsiot.greengrasscoreipc.connect()
-        self.TIMEOUT = 10
-        self.qos = QOS.AT_LEAST_ONCE
-    
+
     @abstractmethod
     def publish(self, topic: str, dict_message: dict):
         pass
@@ -38,13 +34,19 @@ class MessageQueue(ABC):
         pass
     
 class Mqtt(MessageQueue):
+    def __init__(self):
+        self.ipc_client = awsiot.greengrasscoreipc.connect()
+        self.TIMEOUT = 10
+        self.qos = QOS.AT_LEAST_ONCE
     
     def publish(self, topic:str , dict_message: dict):
         message = json.loads(str({}))
         try:
             message = json.dumps(dict_message)
-        except Exception as e:
-            print(f"Failed to serialize the message {dict_message}.")
+        except TypeError as e:
+            message_text = f"Failed to serialize the message {dict_message}."
+            print(message_text)
+            message = {"error": message_text}
         try:
             request = PublishToIoTCoreRequest()
             request.topic_name = topic
@@ -65,6 +67,9 @@ class Mqtt(MessageQueue):
 class Ipc(MessageQueue):
     def __init__(self):
         self.ipc_client = awsiot.greengrasscoreipc.connect()
+        self.TIMEOUT = 10
+        self.qos = QOS.AT_LEAST_ONCE
+    
     
     def extract_message(self, message:dict):
         """
@@ -76,14 +81,22 @@ class Ipc(MessageQueue):
 
         Returns a tuple (return type, value)
         """
+
         try:
             json_message = json.dumps(message)
             return ('json', json_message)
+
         except TypeError:
             # message is not serializable, so if an image was send, 
-            # the image is extracted from the dict:
+            # check if there a image key and extracts it from the dict:
             image = message.get('image', b'')
-            return ('bytes', image)
+            if image:
+                return ('bytes', image)
+            else:
+                message_text = f"Failed to serialize the message {message}."
+                print(message_text)
+                message = {"error": message_text}
+                return ('json', message)
 
     # https://aws.github.io/aws-iot-device-sdk-python-v2/awsiot/greengrasscoreipc.html
     def publish(self, topic: str, dict_message: dict):
