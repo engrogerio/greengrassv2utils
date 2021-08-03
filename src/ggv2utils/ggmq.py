@@ -17,8 +17,9 @@ from awsiot.greengrasscoreipc.model import (
 from abc import ABC, abstractmethod
 
 
-
+# Source code for awsiot lib
 # https://github.com/aws/aws-iot-device-sdk-python-v2/blob/main/awsiot/greengrasscoreipc/client.py
+# https://github.com/aws/aws-iot-device-sdk-python-v2/blob/f3a0021409161a0adda3b208830abdcfa16d0302/awsiot/eventstreamrpc.py
 
 class MessageQueue(ABC):
     """
@@ -37,12 +38,13 @@ class Mqtt(MessageQueue):
     def __init__(self):
         self.ipc_client = awsiot.greengrasscoreipc.connect()
         self.TIMEOUT = 10
-        self.qos = QOS.AT_LEAST_ONCE
+        self.qos = QOS.AT_MOST_ONCE
     
     def publish(self, topic:str , dict_message: dict):
-        message = json.loads(str({}))
+        message = ''
         try:
             message = json.dumps(dict_message)
+            message = dict_message
         except TypeError as e:
             message_text = f"Failed to serialize the message {dict_message}."
             print(message_text)
@@ -59,7 +61,6 @@ class Mqtt(MessageQueue):
             future.result(self.TIMEOUT)
         except Exception as e:
             print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
-        return future
 
     def subscribe(self, topic: str, handler):
         pass
@@ -68,13 +69,13 @@ class Ipc(MessageQueue):
     def __init__(self):
         self.ipc_client = awsiot.greengrasscoreipc.connect()
         self.TIMEOUT = 10
-        self.qos = QOS.AT_LEAST_ONCE
+        self.qos = QOS.AT_MOST_ONCE
     
     
     def extract_message(self, message:dict) -> tuple:
         """
         Method must receive a dictionary as message and
-        return the json version of the if.
+        return a tuple with message type and message content
         If the dictionary can not be serialized to a Json, it 
         looks for the dict key "image" with a byte sequence value
         and extract its value.
@@ -88,9 +89,8 @@ class Ipc(MessageQueue):
 
         except TypeError:
             # if message is not serializable, check if there a image key 
-            # and extracts it from the dict. If no image, return error message
+            # and extracts it from the dict. If no image, return an error message
             image = message.get('image', b'')
-            print('$$$', image[:10])
             if image:
                 return ('bytes', image)
             else:
@@ -117,7 +117,7 @@ class Ipc(MessageQueue):
             else: # message_type is binary
                 publish_message.binary_message = BinaryMessage()
                 publish_message.binary_message.message = message_value
-                print('@@binary', message_value[:10])
+                print('@@binary', message_value[:10], '-', publish_message.__dict__)
 
             request = PublishToTopicRequest()
             request.topic = topic
