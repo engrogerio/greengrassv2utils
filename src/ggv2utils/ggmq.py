@@ -21,18 +21,20 @@ from abc import ABC, abstractmethod
 # https://github.com/aws/aws-iot-device-sdk-python-v2/blob/main/awsiot/greengrasscoreipc/client.py
 
 class MessageQueue(ABC):
-    
+    """
+    A message queue must have a publish and a subscribe method.
+    """
     def __init__(self):
         self.ipc_client = awsiot.greengrasscoreipc.connect()
         self.TIMEOUT = 10
         self.qos = QOS.AT_LEAST_ONCE
     
     @abstractmethod
-    def publish(self):
+    def publish(self, topic: str, dict_message: dict):
         pass
 
     @abstractmethod
-    def subscribe(self):
+    def subscribe(self, topic: str, handler):
         pass
     
 class Mqtt(MessageQueue):
@@ -57,7 +59,7 @@ class Mqtt(MessageQueue):
             print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
         return future
 
-    def subscribe(self, topic, handler):
+    def subscribe(self, topic: str, handler):
         pass
 
 class Ipc(MessageQueue):
@@ -81,15 +83,14 @@ class Ipc(MessageQueue):
             image = message.get('image', b'')
             return ('bytes', image)
 
-
     # https://aws.github.io/aws-iot-device-sdk-python-v2/awsiot/greengrasscoreipc.html
-    def publish(self, topic: str, dic_message):
+    def publish(self, topic: str, dict_message: dict):
         """
         Publish either a json message or a binary message to a specific topic.
 
         Returns the response of the operation.
         """
-        message_type, message_value = self.extract_message(dic_message)
+        message_type, message_value = self.extract_message(dict_message)
         print("@@@", message_type, message_value) 
         try:
             #json_message = message # json.dumps(message)
@@ -123,7 +124,6 @@ class Ipc(MessageQueue):
             traceback.print_exc()
             raise e
         return future
-
 
     def subscribe(self, topic, handler):
         """
