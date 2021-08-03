@@ -71,7 +71,7 @@ class Ipc(MessageQueue):
         self.qos = QOS.AT_LEAST_ONCE
     
     
-    def extract_message(self, message:dict):
+    def extract_message(self, message:dict) -> tuple:
         """
         Method must receive a dictionary as message and
         return the json version of the if.
@@ -79,12 +79,12 @@ class Ipc(MessageQueue):
         looks for the dict key "image" with a byte sequence value
         and extract its value.
 
-        Returns a tuple (return type, value)
+        Returns a tuple (type: str, value: str/bytes)
         """
 
         try:
             json_message = json.dumps(message)
-            return ('json', json_message)
+            return ('json', message)
 
         except TypeError:
             # message is not serializable, so if an image was send, 
@@ -95,7 +95,7 @@ class Ipc(MessageQueue):
             else:
                 message_text = f"Failed to serialize the message {message}."
                 print(message_text)
-                message = {"error": message_text}
+                message = str({"error": message_text})
                 return ('json', message)
 
     # https://aws.github.io/aws-iot-device-sdk-python-v2/awsiot/greengrasscoreipc.html
@@ -108,13 +108,12 @@ class Ipc(MessageQueue):
         message_type, message_value = self.extract_message(dict_message)
         print("@@@", message_type, message_value) 
         try:
-            #json_message = message # json.dumps(message)
             publish_message = PublishMessage()
             
             if message_type == 'json':
                 publish_message.json_message = JsonMessage()
                 publish_message.json_message.message = message_value
-                print('@@json', message_value)
+                print('@@json', message_value, '-', publish_message.__dict__)
             else: # message_type is binary
                 publish_message.binary_message = BinaryMessage()
                 publish_message.binary_message.message = message_value #bytes(message_value, "utf-8")
