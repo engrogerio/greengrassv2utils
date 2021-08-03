@@ -87,15 +87,15 @@ class Ipc(MessageQueue):
             return ('json', message)
 
         except TypeError:
-            # message is not serializable, so if an image was send, 
-            # check if there a image key and extracts it from the dict:
+            # if message is not serializable, check if there a image key 
+            # and extracts it from the dict. If no image, return error message
             image = message.get('image', b'')
-            print('$$$', image)
+            print('$$$', image[:10])
             if image:
                 return ('bytes', image)
             else:
                 message_text = f"Failed to serialize the message {message}."
-                print(message_text)
+                print(message_text, file=sys.stderr)
                 message = str({"error": message_text})
                 return ('json', message)
 
@@ -107,7 +107,6 @@ class Ipc(MessageQueue):
         Returns the response of the operation.
         """
         message_type, message_value = self.extract_message(dict_message)
-        print("@@@", message_type, message_value) 
         try:
             publish_message = PublishMessage()
             
@@ -117,8 +116,8 @@ class Ipc(MessageQueue):
                 print('@@json', message_value, '-', publish_message.__dict__)
             else: # message_type is binary
                 publish_message.binary_message = BinaryMessage()
-                publish_message.binary_message.message = message_value #bytes(message_value, "utf-8")
-                print('@@binary', message_value)
+                publish_message.binary_message.message = message_value
+                print('@@binary', message_value[:10])
 
             request = PublishToTopicRequest()
             request.topic = topic
@@ -156,19 +155,17 @@ class Ipc(MessageQueue):
                 print(f'Successfully subscribed to topic: {topic}.')
             
             except concurrent.futures.TimeoutError as e:
-                print(f'Timeout occurred while subscribing to topic: {topic}. {e}')
+                print(f'Timeout occurred while subscribing to topic: {topic}. {e}', file=sys.stderr)
             
             except UnauthorizedError as e:
-                print(f'Unauthorized error while subscribing to topic: {topic}. {e}')
+                print(f'Unauthorized error while subscribing to topic: {topic}. {e}', file=sys.stderr)
 
             except Exception as e:
-                print(f'Exception while subscribing to topic: {topic}. {e}')
+                print(f'Exception while subscribing to topic: {topic}. {e}', file=sys.stderr)
             
             except InterruptedError as e:
-                print(f'Subscribe interrupted. {e}')
+                print(f'Subscribe interrupted. {e}', file=sys.stderr)
         
         except Exception as e:
-            print('Exception occurred when using IPC.')
+            print(f'Exception occurred when using IPC: {e}', file=sys.stderr)
             traceback.print_exc()
-
-
