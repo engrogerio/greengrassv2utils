@@ -46,8 +46,8 @@ class Mqtt(MessageQueue):
             message = json.dumps(dict_message)
             message = dict_message
         except TypeError as e:
-            message_text = f"Failed to serialize the message {dict_message}."
-            print(message_text)
+            message_text = f"Failed to serialize the message on Mqtt publish: {dict_message}."
+            print(message_text, file=sys.stderr)
             message = {"error": message_text}
         try:
             request = PublishToIoTCoreRequest()
