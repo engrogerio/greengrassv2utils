@@ -63,6 +63,8 @@ class Mqtt(MessageQueue):
         pass
 
 class Ipc(MessageQueue):
+    def __init__(self):
+        self.ipc_client = awsiot.greengrasscoreipc.connect()
     
     def extract_message(self, message:dict):
         """
@@ -117,12 +119,14 @@ class Ipc(MessageQueue):
         
         except concurrent.futures.TimeoutError as e:
             print(f'Timeout occurred while publishing to topic: {topic}', file=sys.stderr)
+
         except UnauthorizedError as e:
             print(f'Unauthorized error while publishing to topic: {topic}', file=sys.stderr)
+        
         except Exception as e:
             print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
             traceback.print_exc()
-            raise e
+
         return future
 
     def subscribe(self, topic, handler):
@@ -136,22 +140,19 @@ class Ipc(MessageQueue):
             future = operation.activate(request)
             try:
                 future.result(self.TIMEOUT)
-                print('Successfully subscribed to topic: ' + topic)
+                print(f'Successfully subscribed to topic: {topic}.')
             
             except concurrent.futures.TimeoutError as e:
-                print('Timeout occurred while subscribing to topic: ' + topic)
-                # raise e
+                print(f'Timeout occurred while subscribing to topic: {topic}. {e}')
             
             except UnauthorizedError as e:
-                print('Unauthorized error while subscribing to topic: ' + topic)
-                raise e
-            
+                print(f'Unauthorized error while subscribing to topic: {topic}. {e}')
+
             except Exception as e:
-                print('Exception while subscribing to topic: ' + topic)
-                raise e
+                print(f'Exception while subscribing to topic: {topic}. {e}')
             
-            except InterruptedError:
-                print('Subscribe interrupted.')
+            except InterruptedError as e:
+                print(f'Subscribe interrupted. {e}')
         
         except Exception as e:
             print('Exception occurred when using IPC.')
