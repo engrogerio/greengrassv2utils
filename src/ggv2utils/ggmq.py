@@ -90,6 +90,7 @@ class Ipc(MessageQueue):
             # message is not serializable, so if an image was send, 
             # check if there a image key and extracts it from the dict:
             image = message.get('image', b'')
+            print('$$$', image)
             if image:
                 return ('bytes', image)
             else:
