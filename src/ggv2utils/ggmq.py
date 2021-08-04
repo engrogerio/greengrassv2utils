@@ -85,7 +85,7 @@ class Ipc(MessageQueue):
 
         try:
             json_message = json.dumps(message)
-            return ('json', message)
+            return ('json', json_message)
 
         except TypeError:
             # if message is not serializable, check if there a image key 
