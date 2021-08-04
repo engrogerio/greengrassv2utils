@@ -44,7 +44,7 @@ class Mqtt(MessageQueue):
         message = ''
         try:
             message = json.dumps(dict_message)
-            message = str(dict_message)
+            # message = str(dict_message)
         except TypeError as e:
             message_text = f"Failed to serialize the message on Mqtt publish: {dict_message}."
             print(message_text, file=sys.stderr)
