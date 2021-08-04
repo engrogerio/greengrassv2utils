@@ -44,7 +44,7 @@ class Mqtt(MessageQueue):
         message = ''
         try:
             message = json.dumps(dict_message)
-            message = dict_message
+            message = str(dict_message)
         except TypeError as e:
             message_text = f"Failed to serialize the message on Mqtt publish: {dict_message}."
             print(message_text, file=sys.stderr)
@@ -143,7 +143,7 @@ class Ipc(MessageQueue):
 
     def subscribe(self, topic, handler):
         """
-        Start the stream and locks the main thread.
+        Start the stream.Caller must loop the main thread.
         """
         try:
             request = SubscribeToTopicRequest()
