@@ -11,7 +11,7 @@ setup(
     url = 'https://github.com/engrogerio/greengrassv2utils.git',
     download_url = 'https://github.com/engrogerio/greengrassv2utils/archive/refs/heads/main.zip',
     keywords = ['aws', 'iot', 'mqtt', 'ipc'],
-    classifiers = []
+    classifiers = [],
     install_requires=[
         'awsiotsdk==1.7.1',
     ]
