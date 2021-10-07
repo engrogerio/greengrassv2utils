@@ -69,14 +69,12 @@ class Ipc(MessageQueue):
         try:
             request = GetConfigurationRequest()
             operation = self.ipc_client.new_get_configuration()
-            operation.activate(request).result(config_utils.TIMEOUT)
-            result = operation.get_response().result(config_utils.TIMEOUT)
+            operation.activate(request).result(self.TIMEOUT)
+            result = operation.get_response().result(self.TIMEOUT)
             return result.value
         except Exception as e:
-            config_utils.logger.error(
-                "Exception occured during fetching the configuration: {}".format(e)
-            )
-
+            print("Exception occured during fetching the configuration: {}".format(e))
+            return None
             
     def extract_message(self, message:dict):
         """
