@@ -1,12 +1,32 @@
 #!/usr/bin/env pyhthon3
-from distutils.core import setup
+import sys
+sys.path.insert(0, 'ggv2utils')
+import ggv2utils
+from ggv2utils import ggmq
+currentVersion = ggv2utils.__version__
 
-setup(name='ggv2utils',
-      version='1.0.0',
-      description='AWS Greengrass v2 Utilities',
-      author='Rogerio Silva',
-      author_email='rogerio@inventsis.com.br',
-      url='https://www.python.org',
-      packages=['ggv2utils'],
-      package_dir={'ggv2utils': 'src/ggv2utils'}
-     )
+from setuptools import setup
+
+setup(
+    name = 'ggv2utils',
+    packages=['ggv2utils'],
+    version = currentVersion,
+    description = 'Message queue services for greengrass v2 components.',
+    author = 'Guardian Industries',
+    author_email = 'rsilva@guardian.com',
+    url = 'https://kochsource.io/rsilva/greengrassv2utils.git',
+    download_url = 'https://kochsource.io/rsilva/greengrassv2utils/-/archive/main/greengrassv2utils-main.zip',
+    keywords = ['aws', 'iot', 'mqtt', 'ipc'],
+    classifiers = [
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "Natural Language :: English",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5"
+    ]
+)
