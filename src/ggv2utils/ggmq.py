@@ -1,7 +1,6 @@
 import traceback
 import json
 import sys
-import datetime
 import concurrent.futures
 import awsiot.greengrasscoreipc
 from awsiot.greengrasscoreipc.model import (
@@ -9,6 +8,7 @@ from awsiot.greengrasscoreipc.model import (
     PublishToTopicRequest,
     SubscribeToTopicRequest,
     PublishToIoTCoreRequest,
+    GetConfigurationRequest,
     PublishMessage,
     JsonMessage,
     BinaryMessage,
@@ -17,38 +17,31 @@ from awsiot.greengrasscoreipc.model import (
 from abc import ABC, abstractmethod
 
 
-# Source code for awsiot lib
 # https://github.com/aws/aws-iot-device-sdk-python-v2/blob/main/awsiot/greengrasscoreipc/client.py
-# https://github.com/aws/aws-iot-device-sdk-python-v2/blob/f3a0021409161a0adda3b208830abdcfa16d0302/awsiot/eventstreamrpc.py
 
 class MessageQueue(ABC):
-    """
-    A message queue must have a publish and a subscribe method.
-    """
-
-    @abstractmethod
-    def publish(self, topic: str, dict_message: dict):
-        pass
-
-    @abstractmethod
-    def subscribe(self, topic: str, handler):
-        pass
     
-class Mqtt(MessageQueue):
     def __init__(self):
         self.ipc_client = awsiot.greengrasscoreipc.connect()
         self.TIMEOUT = 10
-        self.qos = QOS.AT_MOST_ONCE
+        self.qos = QOS.AT_LEAST_ONCE
     
+    @abstractmethod
+    def publish(self):
+        pass
+
+    @abstractmethod
+    def subscribe(self):
+        pass
+    
+class Mqtt(MessageQueue):
+            
     def publish(self, topic:str , dict_message: dict):
-        message = ''
+        message = json.loads(str({}))
         try:
             message = json.dumps(dict_message)
-            # message = str(dict_message)
-        except TypeError as e:
-            message_text = f"Failed to serialize the message on Mqtt publish: {dict_message}."
-            print(message_text, file=sys.stderr)
-            message = {"error": message_text}
+        except Exception as e:
+            print(f"Failed to serialize the message {dict_message}.")
         try:
             request = PublishToIoTCoreRequest()
             request.topic_name = topic
@@ -60,64 +53,70 @@ class Mqtt(MessageQueue):
             future = operation.get_response()
             future.result(self.TIMEOUT)
         except Exception as e:
-            print(f'Exception while publishing to Mqtt topic: {topic}. {e}', file=sys.stderr)
+            print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
+        return future
 
-    def subscribe(self, topic: str, handler):
+    def subscribe(self, topic, handler):
         pass
 
 class Ipc(MessageQueue):
-    def __init__(self):
-        self.ipc_client = awsiot.greengrasscoreipc.connect()
-        self.TIMEOUT = 10
-        self.qos = QOS.AT_MOST_ONCE
-    
-    
-    def extract_message(self, message:dict) -> tuple:
+       
+    def get_config(self):
+        """
+        https://docs.aws.amazon.com/greengrass/v2/developerguide/ipc-component-configuration.html#ipc-operation-getconfiguration
+        Get the component configuration from component recipe
+        """
+        try:
+            request = GetConfigurationRequest()
+            operation = self.ipc_client.new_get_configuration()
+            operation.activate(request).result(config_utils.TIMEOUT)
+            result = operation.get_response().result(config_utils.TIMEOUT)
+            return result.value
+        except Exception as e:
+            config_utils.logger.error(
+                "Exception occured during fetching the configuration: {}".format(e)
+            )
+
+            
+    def extract_message(self, message:dict):
         """
         Method must receive a dictionary as message and
-        return a tuple with message type and message content
+        return the json version of the if.
         If the dictionary can not be serialized to a Json, it 
         looks for the dict key "image" with a byte sequence value
         and extract its value.
 
-        Returns a tuple (type: str, value: str/bytes)
+        Returns a tuple (return type, value)
         """
-
         try:
             json_message = json.dumps(message)
             return ('json', json_message)
-
         except TypeError:
-            # if message is not serializable, check if there a image key 
-            # and extracts it from the dict. If no image, return an error message
+            # message is not serializable, so if an image was send, 
+            # the image is extracted from the dict:
             image = message.get('image', b'')
-            if image:
-                return ('bytes', image)
-            else:
-                message_text = f"Failed to serialize the message {message}."
-                print(message_text, file=sys.stderr)
-                message = str({"error": message_text})
-                return ('json', message)
+            return ('bytes', image)
+
 
     # https://aws.github.io/aws-iot-device-sdk-python-v2/awsiot/greengrasscoreipc.html
-    def publish(self, topic: str, dict_message: dict):
+    def publish(self, topic: str, dic_message):
         """
         Publish either a json message or a binary message to a specific topic.
 
         Returns the response of the operation.
         """
-        message_type, message_value = self.extract_message(dict_message)
+        message_type, message_value = self.extract_message(dic_message)
+        
         try:
+            #json_message = message # json.dumps(message)
             publish_message = PublishMessage()
             
             if message_type == 'json':
                 publish_message.json_message = JsonMessage()
                 publish_message.json_message.message = message_value
-                print('@@json', message_value, '-', publish_message.__dict__)
             else: # message_type is binary
                 publish_message.binary_message = BinaryMessage()
-                publish_message.binary_message.message = message_value
-                print('@@binary', message_value[:10], '-', publish_message.__dict__)
+                publish_message.binary_message.message = message_value #bytes(message_value, "utf-8")
 
             request = PublishToTopicRequest()
             request.topic = topic
@@ -130,20 +129,19 @@ class Ipc(MessageQueue):
             future.result(self.TIMEOUT)
         
         except concurrent.futures.TimeoutError as e:
-            print(f'Timeout occurred while publishing to Ipc topic: {topic}', file=sys.stderr)
-
+            print(f'Timeout occurred while publishing to topic: {topic}', file=sys.stderr)
         except UnauthorizedError as e:
-            print(f'Unauthorized error while publishing to Ipc topic: {topic}', file=sys.stderr)
-        
+            print(f'Unauthorized error while publishing to topic: {topic}', file=sys.stderr)
         except Exception as e:
-            print(f'Exception while publishing to Ipc topic: {topic}. {e}', file=sys.stderr)
+            print(f'Exception while publishing to topic: {topic}. {e}', file=sys.stderr)
             traceback.print_exc()
-
+            raise e
         return future
+
 
     def subscribe(self, topic, handler):
         """
-        Start the stream.Caller must loop the main thread.
+        Start the stream and locks the main thread.
         """
         try:
             request = SubscribeToTopicRequest()
@@ -152,20 +150,23 @@ class Ipc(MessageQueue):
             future = operation.activate(request)
             try:
                 future.result(self.TIMEOUT)
-                print(f'Successfully subscribed to topic: {topic}.')
+                print('Successfully subscribed to topic: ' + topic)
             
             except concurrent.futures.TimeoutError as e:
-                print(f'Timeout occurred while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
+                print('Timeout occurred while subscribing to topic: ' + topic)
+                # raise e
             
             except UnauthorizedError as e:
-                print(f'Unauthorized error while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
-
-            except Exception as e:
-                print(f'Exception while subscribing to ipc topic: {topic}. {e}', file=sys.stderr)
+                print('Unauthorized error while subscribing to topic: ' + topic)
+                raise e
             
-            except InterruptedError as e:
-                print(f'Subscribe top ipc interrupted. {e}', file=sys.stderr)
+            except Exception as e:
+                print('Exception while subscribing to topic: ' + topic)
+                raise e
+            
+            except InterruptedError:
+                print('Subscribe interrupted.')
         
         except Exception as e:
-            print(f'Exception occurred when subscribing ipc topic {topic}: {e}', file=sys.stderr)
+            print('Exception occurred when using IPC.')
             traceback.print_exc()
