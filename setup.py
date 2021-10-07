@@ -1,7 +1,7 @@
 #!/usr/bin/env pyhthon3
 import sys
 sys.path.insert(0, 'ggv2utils')
-from src.ggv2utils import ggmq
+from ggv2utils import ggmq
 currentVersion = "0.0.1"
 
 from setuptools import setup
