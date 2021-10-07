@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, 'ggv2utils')
 import ggv2utils
 from ggv2utils import ggmq
-currentVersion = ggv2utils.__version__
+currentVersion = "0.0.1"
 
 from setuptools import setup
 
